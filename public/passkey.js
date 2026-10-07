@@ -56,7 +56,7 @@
     CHALLENGE_INVALID: '확인 시간이 지났거나 이미 쓴 요청입니다. 처음부터 다시 눌러 주세요.',
     INVITE_INVALID: '연결 링크가 만료되었거나 이미 사용되었습니다. 로그인한 기기에서 새 링크를 만들어 주세요.',
     VERIFY_FAILED: '패스키를 확인하지 못했습니다. 다시 시도해 주세요.',
-    LOGIN_FAILED: '로그인에 실패했습니다. 이 사이트에 등록한 패스키인지 확인해 주세요. 처음이라면 "계정 만들기"를 먼저 하세요.',
+    LOGIN_FAILED: '로그인에 실패했습니다. 고른 패스키가 이 사이트에 등록된 것이 아닐 수 있습니다(지워진 계정의 예전 패스키 등). 다른 패스키를 고르거나, 처음이면 "계정 만들기"를, 다른 기기에서 쓰려면 연결 링크를 쓰세요.',
     LAST_PASSKEY: '마지막 패스키는 지울 수 없습니다. 먼저 다른 패스키를 추가해 주세요.',
     UNAUTHENTICATED: '로그인이 필요합니다.',
     SERVER_ERROR: '서버에 문제가 있습니다. 잠시 뒤 다시 시도해 주세요.',
@@ -96,7 +96,10 @@
   async function register({ name, kind, invite }) {
     const label = deviceLabel();
     const start = await api('/api/auth/register-options', { method: 'POST', data: { name, label, kind, invite } });
-    if (!start.ok) return say(errText(start), 'error');
+    if (!start.ok) {
+      if (start.json?.error === 'INVITE_INVALID') store.clear(); // 만료된 링크로 계속 같은 화면에 갇히지 않게
+      return say(errText(start), 'error');
+    }
     let cred;
     try {
       cred = await navigator.credentials.create({ publicKey: creationOptions(start.json.options) });
@@ -271,14 +274,21 @@
   }));
 
   // 연결 링크(#link=...)로 열린 경우: 주소창에서 토큰을 지우고 연결 안내를 보여 준다.
+  // 새로고침해도 연결 화면이 유지되도록 토큰은 이 탭의 sessionStorage에만 잠깐 둔다.
+  const store = {
+    get() { try { return sessionStorage.getItem('t08-invite'); } catch { return null; } },
+    set(v) { try { sessionStorage.setItem('t08-invite', v); } catch { /* 저장 못 해도 이번 화면은 동작 */ } },
+    clear() { try { sessionStorage.removeItem('t08-invite'); } catch { /* 무시 */ } },
+  };
   const linkMatch = location.hash.match(/^#link=([\w-]+)$/);
-  if (linkMatch) {
-    const invite = linkMatch[1];
+  if (linkMatch) store.set(linkMatch[1]);
+  const invite = linkMatch ? linkMatch[1] : store.get();
+  if (invite) {
     history.replaceState(null, '', location.pathname + '#vault');
     panel('invite');
     $('vaultInviteGo').addEventListener('click', () => run(async () => {
       say('기기의 패스키 만들기 창을 기다리는 중…');
-      if (await register({ invite })) { say('이 기기를 내 계정에 연결했습니다.', 'ok'); await showOpen(); }
+      if (await register({ invite })) { store.clear(); say('이 기기를 내 계정에 연결했습니다.', 'ok'); await showOpen(); }
     }));
     document.getElementById('vault').scrollIntoView();
   } else {
