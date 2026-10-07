@@ -26,11 +26,21 @@ async function registerOptions(req, res) {
   const { rpID } = rp(req);
   const b = body(req);
   const label = clean(b.label, 30) || `패스키 ${new Date().toLocaleDateString('ko-KR')}`;
-  const user = await currentUser(req);
+  let user = await currentUser(req);
+
+  // 다른 기기에서 만든 연결 링크로 온 경우: 링크가 유효하면 그 계정에 패스키를 추가한다.
+  // 링크는 여기서 소모하지 않고, 등록 검증이 끝날 때 한 번만 소모한다(중간에 취소해도 다시 시도 가능).
+  let inviteKey = null;
+  if (b.invite) {
+    inviteKey = 'invite:' + sha256(String(b.invite));
+    const inv = await db().peekChallenge(inviteKey, 'register');
+    user = inv ? await db().getUser(inv.userId) : null;
+    if (!user) return send(res, 400, { error: 'INVITE_INVALID' });
+  }
 
   let userId, userName, existing = [];
   if (user) {
-    // 이미 로그인한 계정에 패스키 추가
+    // 이미 로그인한 계정(또는 연결 링크의 계정)에 패스키 추가
     userId = user.id; userName = user.name;
     existing = await db().listPasskeys(user.id);
   } else {
@@ -56,9 +66,13 @@ async function registerOptions(req, res) {
 
   await db().saveChallenge({
     challenge: options.challenge, kind: 'register', expiresAt: expiry(),
-    userId: user ? user.id : null, userName: user ? null : userName, pendingUserId: user ? null : userId,
+    userId: user ? user.id : null,
+    // 새 계정이면 표시 이름, 연결 링크면 링크 키를 담는다.
+    userName: inviteKey || (user ? null : userName),
+    // 새 계정이면 미리 정한 ID, 연결 링크면 계정 ID(= userId와 같으면 링크로 온 것으로 판단)
+    pendingUserId: inviteKey ? user.id : user ? null : userId,
   });
-  log('register_challenge_issued', { mode: user ? 'add' : 'new' });
+  log('register_challenge_issued', { mode: inviteKey ? 'invite' : user ? 'add' : 'new' });
   send(res, 200, { options, label });
 }
 
@@ -97,6 +111,20 @@ async function registerVerify(req, res) {
     transports: response.response.transports ?? info.credential.transports,
     label, deviceType: info.credentialDeviceType, backedUp: info.credentialBackedUp,
   };
+
+  if (row.userId && row.pendingUserId === row.userId) {
+    // 연결 링크로 온 등록: 링크를 지금 한 번만 소모한다. 이미 쓴 링크면 거절.
+    const used = await db().consumeChallenge(row.userName, 'register');
+    if (!used) {
+      log('register_rejected', { reason: 'INVITE_INVALID_OR_REUSED' });
+      return send(res, 400, { error: 'INVITE_INVALID' });
+    }
+    const user = await db().getUser(row.userId);
+    await db().addPasskey({ ...pk, userId: user.id });
+    await startSession(req, res, user.id);
+    log('passkey_added_by_invite', { deviceType: pk.deviceType, backedUp: pk.backedUp });
+    return send(res, 200, { ok: true, added: true, name: user.name });
+  }
 
   if (row.userId) {
     // 기존 계정에 추가: 지금도 그 계정으로 로그인한 상태여야 한다.

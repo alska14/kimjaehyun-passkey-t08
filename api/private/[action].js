@@ -1,5 +1,7 @@
 import { db } from '../../lib/db.mjs';
-import { send, log, sameOriginJson, body, currentUser } from '../../lib/http.mjs';
+import { send, log, sameOriginJson, body, currentUser, rp, sha256, newToken } from '../../lib/http.mjs';
+
+const INVITE_MS = 10 * 60 * 1000;
 
 const clean = (v, max) => String(v ?? '').trim().slice(0, max);
 
@@ -29,6 +31,19 @@ export default async function handler(req, res) {
         return send(res, 201, await db().addItem(user.id, title, clean(b.body, 500)));
       }
       return send(res, 405, { error: 'METHOD_NOT_ALLOWED' });
+    }
+
+    // 다른 기기(휴대폰 등)를 이 계정에 연결하는 일회용 링크. 10분 안에 한 번만 쓸 수 있다.
+    if (action === 'invite') {
+      if (req.method !== 'POST') return send(res, 405, { error: 'METHOD_NOT_ALLOWED' });
+      if (!sameOriginJson(req)) return send(res, 403, { error: 'BAD_ORIGIN' });
+      const token = newToken();
+      await db().saveChallenge({
+        challenge: 'invite:' + sha256(token), kind: 'register', userId: user.id,
+        expiresAt: new Date(Date.now() + INVITE_MS).toISOString(),
+      });
+      log('invite_created');
+      return send(res, 201, { url: `${rp(req).origin}/#link=${token}`, expiresInSeconds: INVITE_MS / 1000 });
     }
 
     if (action === 'passkeys') {

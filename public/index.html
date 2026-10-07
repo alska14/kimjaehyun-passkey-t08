@@ -59,6 +59,13 @@
 .vault-msg[data-kind="error"]{color:#b3261e}
 .vault-msg[data-kind="ok"]{color:#1d6b43}
 @media(max-width:760px){.vault-cols{grid-template-columns:1fr}.vault-box{padding:16px}}
+.vault-btn.big{width:100%;min-height:54px;font-size:17px}
+.vault-more{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+.vault-more summary{cursor:pointer;font-size:13px;color:var(--accent);padding:6px 0}
+.vault-more summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.vault-warn{margin:8px 0 12px;padding:10px 12px;border-left:3px solid #b3261e;background:#fdf1ef;font-size:13px;line-height:1.7}
+.vault-actions{margin-top:12px}
+.vault-badge{display:inline-block;font-size:11px;padding:1px 7px;border:1px solid var(--accent);color:var(--accent);margin-left:6px}
 @media print{.vault{display:none}}
 </style>
 </head>
@@ -93,36 +100,47 @@
 <h2 id="vault-title">여기부터는<br>패스키로 잠겨 있습니다.</h2>
 <p class="scope-note vault-edge">▲ 위쪽은 누구나 보는 공개 영역 · 아래 상자부터 비공개 영역 ▼</p>
 <div class="vault-box" id="vaultBox" data-state="locked">
+
 <div id="vaultLocked">
-<p class="vault-lead">잠겨 있음. 비밀번호는 없고, 이 기기의 지문·얼굴·PIN으로 확인합니다.</p>
-<div class="vault-cols">
-<div>
-<h3>이미 계정이 있어요</h3>
-<p class="vault-note">등록해 둔 패스키로 들어갑니다. 휴대폰 패스키는 PC 화면에서 "다른 기기"를 골라 QR로도 쓸 수 있습니다.</p>
-<button type="button" id="vaultLogin" class="vault-btn">패스키로 들어가기</button>
-</div>
+<p class="vault-lead">잠겨 있음. 비밀번호 없이, 이 기기의 지문·얼굴·PIN으로 엽니다.</p>
+<button type="button" id="vaultLogin" class="vault-btn big">패스키로 열기</button>
+<p class="vault-note">이미 패스키를 만들어 둔 기기라면 이 버튼 하나면 됩니다.</p>
+
+<details class="vault-more" id="vaultNew">
+<summary>처음이신가요? 계정 만들기</summary>
 <form id="vaultRegisterForm">
-<h3>새 계정 만들기</h3>
+<p class="vault-warn">이미 계정이 있다면 새로 만들지 마세요. 새로 만들면 별개의 계정이 생깁니다. 다른 기기에서 같은 계정을 쓰려면, 로그인한 기기에서 "다른 기기 연결" 링크를 만들어 그 기기에서 여세요.</p>
 <label for="vaultNameInput">표시 이름 (별명)</label>
 <input id="vaultNameInput" maxlength="30" required autocomplete="off">
-<label for="vaultLabelInput">이 패스키 이름 (예: 내 노트북)</label>
-<input id="vaultLabelInput" maxlength="30" autocomplete="off">
-<label for="vaultKindInput">패스키를 저장할 곳</label>
-<select id="vaultKindInput">
-<option value="local">이 기기 (지문 · 얼굴 · PIN · 화면 잠금)</option>
-<option value="phone">다른 기기의 휴대폰 쓰기 (QR 코드)</option>
-<option value="key">USB 보안 키</option>
-<option value="auto">브라우저가 고르게 하기</option>
-</select>
 <button type="submit" class="vault-btn">패스키 만들고 시작</button>
 </form>
+</details>
+
+<details class="vault-more">
+<summary>창이 안 뜨거나 오류가 나요</summary>
+<p class="vault-note">기본값은 "자동"입니다. USB 보안 키 창만 뜨거나 "기기를 사용할 수 없음"이 나오면 Chrome·Edge·Safari로 열거나 아래에서 바꿔 보세요. 이 선택은 "계정 만들기"에만 적용됩니다.</p>
+<label for="vaultKindInput">패스키를 저장할 곳</label>
+<select id="vaultKindInput">
+<option value="auto">자동 (추천)</option>
+<option value="local">이 기기만 (지문 · 얼굴 · PIN)</option>
+<option value="phone">휴대폰 QR (블루투스 필요)</option>
+<option value="key">USB 보안 키</option>
+</select>
+</details>
 </div>
+
+<div id="vaultInvite" hidden>
+<p class="vault-lead">이 기기를 내 계정에 연결합니다.</p>
+<p class="vault-note">다른 기기에서 만든 연결 링크로 들어왔습니다. 아래 버튼을 누르고 이 기기의 지문·얼굴·PIN으로 확인하면, 이 기기용 패스키가 같은 계정에 추가됩니다.</p>
+<button type="button" id="vaultInviteGo" class="vault-btn big">이 기기에 패스키 만들기</button>
 </div>
+
 <div id="vaultOpen" hidden>
 <div class="vault-head">
 <h3><span id="vaultName"></span>님의 비공개 자리</h3>
 <button type="button" id="vaultLogout" class="vault-btn ghost">로그아웃</button>
 </div>
+
 <h4>내 메모</h4>
 <ul id="vaultItems" class="vault-list"></ul>
 <form id="vaultItemForm" class="vault-inline">
@@ -130,20 +148,36 @@
 <input id="vaultItemBody" placeholder="내용 (가상·예시 내용만)" maxlength="500" aria-label="새 메모 내용">
 <button type="submit" class="vault-btn">추가</button>
 </form>
+
 <h4>내 패스키</h4>
+<p id="vaultKeyHint" class="vault-warn" hidden>패스키가 하나뿐입니다. 이 기기를 잃어버리면 이 계정에 못 들어옵니다. 휴대폰 등 다른 기기에서도 쓰려면 아래 "다른 기기 연결"을 누르세요.</p>
 <ul id="vaultKeys" class="vault-list"></ul>
+
+<div class="vault-actions">
+<button type="button" id="vaultInviteMake" class="vault-btn">다른 기기 연결 (휴대폰 등)</button>
+</div>
+<div id="vaultInviteResult" hidden>
+<p class="vault-note">연결할 기기(휴대폰 등)에서 이 링크를 여세요. 카카오톡 나에게 보내기나 메일이 편합니다. <strong>10분 안에 한 번만</strong> 쓸 수 있고, 남에게 보내면 안 됩니다.</p>
+<div class="vault-inline">
+<input id="vaultInviteUrl" readonly aria-label="다른 기기 연결 링크">
+<button type="button" id="vaultInviteCopy" class="vault-btn ghost">링크 복사</button>
+</div>
+</div>
+
+<details class="vault-more">
+<summary>고급: 지금 쓰는 브라우저에 패스키 하나 더</summary>
 <form id="vaultAddKeyForm" class="vault-inline">
-<input id="vaultAddLabel" placeholder="새 패스키 이름 (예: 내 휴대폰)" maxlength="30" aria-label="새 패스키 이름">
 <select id="vaultAddKind" aria-label="패스키를 저장할 곳">
-<option value="local">이 기기 (지문 · 얼굴 · PIN · 화면 잠금)</option>
-<option value="phone">다른 기기의 휴대폰 쓰기 (QR 코드)</option>
+<option value="auto">자동 (추천)</option>
+<option value="local">이 기기만 (지문 · 얼굴 · PIN)</option>
+<option value="phone">휴대폰 QR (블루투스 필요)</option>
 <option value="key">USB 보안 키</option>
-<option value="auto">브라우저가 고르게 하기</option>
 </select>
 <button type="submit" class="vault-btn">패스키 추가</button>
 </form>
-<p class="vault-note">PC와 휴대폰 둘 다 쓰려면 각 기기에서 패스키를 하나씩 추가해 두세요. 한 기기를 잃어버려도 다른 패스키로 들어옵니다.</p>
+</details>
 </div>
+
 <p id="vaultMsg" class="vault-msg" role="status" aria-live="polite"></p>
 </div>
 </section>

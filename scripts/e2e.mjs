@@ -53,9 +53,9 @@ const cookieOf = async (dev) => {
 const msg = (dev) => dev.page.locator('#vaultMsg').innerText();
 const waitOpen = (dev) => dev.page.waitForSelector('#vaultOpen:not([hidden])', { timeout: 15000 });
 
-async function register(dev, name, label) {
+async function register(dev, name) {
+  await dev.page.click('#vaultNew summary');
   await dev.page.fill('#vaultNameInput', name);
-  await dev.page.fill('#vaultLabelInput', label);
   await dev.page.click('#vaultRegisterForm button[type=submit]');
   await waitOpen(dev);
 }
@@ -92,13 +92,16 @@ await A.page.waitForTimeout(3000);
 await A.page.screenshot({ path: 'evidence/01-locked-desktop.png' });
 await A.page.locator('#vault').scrollIntoViewIfNeeded();
 await A.page.screenshot({ path: 'evidence/02-vault-locked.png' });
-await register(A, '테스트A', '가상 노트북');
+await register(A, '테스트A');
 await A.page.waitForSelector('#vaultItems li', { timeout: 15000 });
 await A.page.waitForSelector('#vaultKeys li', { timeout: 15000 });
 const itemsA = await A.page.locator('#vaultItems li').count();
 check('T08-C14', '등록 직후 비공개 항목이 3개 이상 보임', itemsA >= 3, `${itemsA}개`);
-check('T08-C21/C24', '등록한 패스키에 이름이 붙고 목록에 보임', (await A.page.locator('#vaultKeys li').first().innerText()).includes('가상 노트북'));
-check('T08-C26', '패스키 저장 위치 표시가 목록에 있음', (await A.page.locator('#vaultKeys li').first().innerText()).includes('저장 위치'));
+const firstKeyText = await A.page.locator('#vaultKeys li').first().innerText();
+check('T08-C21/C24', '등록한 패스키에 기기 이름이 자동으로 붙고 목록에 보임', /·/.test(firstKeyText.split('\n')[0]), firstKeyText.split('\n')[0]);
+check('T08-C26', '패스키 저장 위치(동기화 여부) 표시가 목록에 있음', /이 기기에만 저장|동기화/.test(firstKeyText));
+check('ux-hint', '패스키가 하나뿐일 때 "하나뿐" 안내가 보임', await A.page.locator('#vaultKeyHint').isVisible());
+await A.page.locator('#vaultBox').scrollIntoViewIfNeeded();
 await A.page.screenshot({ path: 'evidence/03-vault-open-A.png' });
 const cookieA1 = await cookieOf(A);
 check('T08-C34', '세션 쿠키는 HttpOnly(스크립트로 못 읽음)', (await A.context.cookies()).find((c) => c.name === 'sid')?.httpOnly === true);
@@ -134,16 +137,33 @@ const forged = await post('/api/auth/login-verify', {
 check('T08-C30', '서명이 틀린 로그인 요청은 거절', forged.status === 401, `HTTP ${forged.status}`);
 check('T08-C29', '그 거절 응답에 세션 쿠키가 없음', !forged.headers.get('set-cookie'));
 
-// ---------- 5. 두 번째 패스키 추가, 첫 번째 삭제 ----------
-const credsBefore = (await A.cdp.send('WebAuthn.getCredentials', { authenticatorId: A.authId })).credentials;
-await A.cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId: A.authId });
-A.authId = await A.add();
-await A.page.fill('#vaultAddLabel', '가상 휴대폰');
-await A.page.click('#vaultAddKeyForm button[type=submit]');
+// ---------- 5. 다른 기기 연결 링크로 두 번째 패스키 (기기 D = 휴대폰 역할) ----------
+await A.page.click('#vaultInviteMake');
+await A.page.waitForFunction(() => document.getElementById('vaultInviteUrl').value.includes('#link='));
+const inviteUrl = await A.page.inputValue('#vaultInviteUrl');
+const inviteToken = inviteUrl.split('#link=')[1];
+check('ux-invite', '로그인한 기기에서 연결 링크를 만들 수 있음', inviteUrl.startsWith(ORIGIN) && inviteToken.length >= 40);
+const D = await newDevice('D-휴대폰');
+await D.page.goto(inviteUrl);
+await D.page.waitForSelector('#vaultInvite:not([hidden])');
+check('ux-invite', '연결 링크로 열면 "이 기기를 내 계정에 연결" 화면만 보임', await D.page.locator('#vaultLocked').isHidden());
+check('ux-invite', '링크 토큰이 주소창에서 지워짐', !D.page.url().includes('link='));
+await D.page.locator('#vaultBox').scrollIntoViewIfNeeded();
+await D.page.screenshot({ path: 'evidence/07-invite-device.png' });
+await D.page.click('#vaultInviteGo');
+await waitOpen(D);
+await D.page.waitForFunction(() => document.querySelectorAll('#vaultKeys li').length === 2, null, { timeout: 15000 });
+check('T08-C42', '같은 계정에 두 번째 기기의 패스키가 등록됨(목록 2개)', true);
+const reuse = await post('/api/auth/register-options', { invite: inviteToken });
+check('ux-invite', '이미 쓴 연결 링크는 거절', reuse.status === 400 && (await reuse.json()).error === 'INVITE_INVALID', `HTTP ${reuse.status}`);
+const badInvite = await post('/api/auth/register-options', { invite: 'x'.repeat(43) });
+check('ux-invite', '엉터리 연결 링크는 거절', badInvite.status === 400, `HTTP ${badInvite.status}`);
+await A.page.reload();
 await A.page.waitForFunction(() => document.querySelectorAll('#vaultKeys li').length === 2, null, { timeout: 15000 });
-check('T08-C42', '한 계정에 패스키가 두 개 등록됨', true, '목록 2개');
 const keyTexts = await A.page.locator('#vaultKeys li').allInnerTexts();
-check('T08-C43', '목록에 이름과 등록 날짜 표시', keyTexts.every((t) => t.includes('등록')) && keyTexts.some((t) => t.includes('가상 휴대폰')));
+check('T08-C43', '목록에 이름과 등록 날짜 표시', keyTexts.every((t) => t.includes('등록')));
+check('ux-hint', '패스키가 둘이면 "하나뿐" 안내가 사라짐', await A.page.locator('#vaultKeyHint').isHidden());
+await A.page.locator('#vaultBox').scrollIntoViewIfNeeded();
 await A.page.screenshot({ path: 'evidence/04-two-passkeys.png' });
 
 const keysApi = await (await get('/api/private/passkeys', await cookieOf(A))).json();
@@ -159,19 +179,15 @@ const last = await fetch(`${BASE}/api/private/passkeys?id=${encodeURIComponent(s
 });
 check('T08-C46', '마지막 패스키는 못 지움(409). 하나도 안 남는 상태를 막음', last.status === 409, `HTTP ${last.status}`);
 
+// 지운 첫 번째 패스키를 아직 가진 기기(A)로 로그인 시도 -> 거절
 await logout(A);
-await login(A);
-check('T08-C44', '남은 두 번째 패스키로 로그인됨', await A.page.locator('#vaultOpen').isVisible());
-await logout(A);
-
-// 지운 첫 번째 패스키를 가진 기기로 로그인 시도 -> 거절
-const credsSecond = (await A.cdp.send('WebAuthn.getCredentials', { authenticatorId: A.authId })).credentials;
-await A.cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId: A.authId });
-A.authId = await A.add();
-for (const c of credsBefore) await A.cdp.send('WebAuthn.addCredential', { authenticatorId: A.authId, credential: c });
 await A.page.click('#vaultLogin');
 await A.page.waitForFunction(() => /실패|취소|쓸 수 없/.test(document.getElementById('vaultMsg').textContent), null, { timeout: 15000 });
 check('T08-C45', '지운 패스키로는 더 이상 로그인할 수 없음', !(await A.page.locator('#vaultOpen').isVisible()), await msg(A));
+// 남은 두 번째 패스키(기기 D)로는 로그인됨
+await logout(D);
+await login(D);
+check('T08-C44', '남은 두 번째 패스키로 로그인됨', await D.page.locator('#vaultOpen').isVisible());
 
 // ---------- 6. 등록 취소 ----------
 const C = await newDevice('취소-시험');
@@ -179,6 +195,7 @@ await C.page.goto(BASE);
 await C.page.evaluate(() => {
   navigator.credentials.create = () => Promise.reject(Object.assign(new Error('x'), { name: 'NotAllowedError' }));
 });
+await C.page.click('#vaultNew summary');
 await C.page.fill('#vaultNameInput', '취소시험');
 await C.page.click('#vaultRegisterForm button[type=submit]');
 await C.page.waitForFunction(() => document.getElementById('vaultMsg').textContent.includes('취소'));
@@ -189,7 +206,7 @@ check('T08-C25', '취소한 뒤 세션 쿠키 없음', cookieC === null);
 // ---------- 7. 계정 B: 분리 ----------
 const B = await newDevice('B-휴대폰');
 await B.page.goto(BASE);
-await register(B, '테스트B', '가상 B 기기');
+await register(B, '테스트B');
 check('T08-C36', '두 번째 계정도 등록됨', true);
 check('T08-C20', '등록 요청마다 질문 값이 서로 다름', A.log.regChallenges[0] !== B.log.regChallenges[0], '계정 A 등록 질문 ≠ 계정 B 등록 질문');
 const cookieB = await cookieOf(B);
@@ -207,13 +224,9 @@ const spoofBody = await fetch(`${BASE}/api/private/items`, {
 });
 const afterB = await (await get('/api/private/items', cookieB)).json();
 check('T08-C40', '본문에 다른 계정 ID를 적어 보내도 B 자료로만 저장', spoofBody.status === 201 && afterB.items.length === own.items.length + 1);
-await A.cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId: A.authId });
-A.authId = await A.add();
-for (const c of credsSecond) await A.cdp.send('WebAuthn.addCredential', { authenticatorId: A.authId, credential: c });
-await A.page.reload();
-await login(A);
-const aItems = await (await get('/api/private/items', await cookieOf(A))).json();
+const aItems = await (await get('/api/private/items', await cookieOf(D))).json();
 check('T08-C39', 'A 자료에 B가 쓴 메모가 섞이지 않음', !aItems.items.some((i) => i.title === 'B가 쓴 메모'), `A ${aItems.items.length}건`);
+await B.page.locator('#vaultBox').scrollIntoViewIfNeeded();
 await B.page.screenshot({ path: 'evidence/05-account-B.png' });
 
 // ---------- 8. 다른 오리진 거절 ----------
