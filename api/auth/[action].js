@@ -51,6 +51,9 @@ async function registerOptions(req, res) {
     preferredAuthenticatorType: KINDS[b.kind],
   });
 
+  // 휴대폰(QR)은 'cross-platform'으로 제한하면 Windows가 USB 보안 키 창만 띄운다. 힌트만 남긴다.
+  if (b.kind === 'phone') delete options.authenticatorSelection.authenticatorAttachment;
+
   await db().saveChallenge({
     challenge: options.challenge, kind: 'register', expiresAt: expiry(),
     userId: user ? user.id : null, userName: user ? null : userName, pendingUserId: user ? null : userId,
