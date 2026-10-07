@@ -39,6 +39,9 @@
 .vault-note{margin:6px 0 12px;font-size:13px;color:var(--muted);line-height:1.7}
 .vault-cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
 .vault-box label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+.vault-box select{width:100%;padding:10px 12px;border:1px solid var(--ink);border-radius:0;background:var(--paper);color:var(--ink);font:inherit}
+.vault-inline select{flex:1 1 220px;width:auto}
+.vault-box select:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .vault-box input{width:100%;padding:10px 12px;border:1px solid var(--ink);border-radius:0;background:var(--paper);color:var(--ink);font:inherit}
 .vault-box input:focus-visible,.vault-btn:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .vault-btn{margin-top:12px;min-height:44px;padding:10px 18px;border:1px solid var(--accent);border-radius:0;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
@@ -104,6 +107,13 @@
 <input id="vaultNameInput" maxlength="30" required autocomplete="off">
 <label for="vaultLabelInput">이 패스키 이름 (예: 내 노트북)</label>
 <input id="vaultLabelInput" maxlength="30" autocomplete="off">
+<label for="vaultKindInput">패스키를 저장할 곳</label>
+<select id="vaultKindInput">
+<option value="local">이 기기 (Windows Hello · 지문 · PIN)</option>
+<option value="phone">내 휴대폰 (QR 코드로 연결)</option>
+<option value="key">USB 보안 키</option>
+<option value="auto">브라우저가 고르게 하기</option>
+</select>
 <button type="submit" class="vault-btn">패스키 만들고 시작</button>
 </form>
 </div>
@@ -124,7 +134,13 @@
 <ul id="vaultKeys" class="vault-list"></ul>
 <form id="vaultAddKeyForm" class="vault-inline">
 <input id="vaultAddLabel" placeholder="새 패스키 이름 (예: 내 휴대폰)" maxlength="30" aria-label="새 패스키 이름">
-<button type="submit" class="vault-btn">이 기기에 패스키 추가</button>
+<select id="vaultAddKind" aria-label="패스키를 저장할 곳">
+<option value="local">이 기기 (Windows Hello · 지문 · PIN)</option>
+<option value="phone">내 휴대폰 (QR 코드로 연결)</option>
+<option value="key">USB 보안 키</option>
+<option value="auto">브라우저가 고르게 하기</option>
+</select>
+<button type="submit" class="vault-btn">패스키 추가</button>
 </form>
 <p class="vault-note">PC와 휴대폰 둘 다 쓰려면 각 기기에서 패스키를 하나씩 추가해 두세요. 한 기기를 잃어버려도 다른 패스키로 들어옵니다.</p>
 </div>

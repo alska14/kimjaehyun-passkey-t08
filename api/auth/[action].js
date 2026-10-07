@@ -17,6 +17,8 @@ const SEED_ITEMS = [
   ['스스로 쓰는 회고', '예시 회고: 이번 주에 막혔던 점과 해결한 방법을 한 줄씩 남긴다.'],
 ];
 
+const KINDS = { local: 'localDevice', phone: 'remoteDevice', key: 'securityKey' };
+
 const clean = (v, max) => String(v ?? '').trim().slice(0, max);
 const expiry = () => new Date(Date.now() + CHALLENGE_MS).toISOString();
 
@@ -45,6 +47,8 @@ async function registerOptions(req, res) {
     attestationType: 'none',
     excludeCredentials: existing.map((p) => ({ id: p.id, transports: p.transports })),
     authenticatorSelection: { residentKey: 'required', userVerification: 'preferred' },
+    // 저장 위치 선택: 이 기기(Windows Hello·지문·PIN) / 휴대폰(QR) / USB 보안 키. 없으면 브라우저가 고름.
+    preferredAuthenticatorType: KINDS[b.kind],
   });
 
   await db().saveChallenge({

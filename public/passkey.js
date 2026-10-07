@@ -77,8 +77,8 @@
     };
   }
 
-  async function register({ name, label }) {
-    const start = await api('/api/auth/register-options', { method: 'POST', data: { name, label } });
+  async function register({ name, label, kind }) {
+    const start = await api('/api/auth/register-options', { method: 'POST', data: { name, label, kind } });
     if (!start.ok) return say(errText(start), 'error');
     let cred;
     try {
@@ -213,9 +213,10 @@
     e.preventDefault();
     const name = $('vaultNameInput').value.trim();
     const label = $('vaultLabelInput').value.trim();
+    const kind = $('vaultKindInput').value;
     run(async () => {
       say('기기의 패스키 만들기 창을 기다리는 중…');
-      if (await register({ name, label })) { say('계정과 패스키를 만들었습니다.', 'ok'); await showOpen(); }
+      if (await register({ name, label, kind })) { say('계정과 패스키를 만들었습니다.', 'ok'); await showOpen(); }
     });
   });
 
@@ -224,7 +225,7 @@
     const label = $('vaultAddLabel').value.trim();
     run(async () => {
       say('기기의 패스키 만들기 창을 기다리는 중…');
-      if (await register({ label })) { $('vaultAddLabel').value = ''; say('패스키를 추가했습니다.', 'ok'); await loadOpen(); }
+      if (await register({ label, kind: $('vaultAddKind').value })) { $('vaultAddLabel').value = ''; say('패스키를 추가했습니다.', 'ok'); await loadOpen(); }
     });
   });
 

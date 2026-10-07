@@ -77,6 +77,11 @@ for (const p of ['/api/private/items', '/api/private/passkeys']) {
   const r = await get(p);
   check('T08-C16', `로그인 없이 ${p} 요청 거절`, r.status === 401, `HTTP ${r.status}`);
 }
+for (const [kind, hint, attach] of [['local', 'client-device', 'platform'], ['phone', 'hybrid', 'cross-platform'], ['key', 'security-key', 'cross-platform'], ['auto', undefined, undefined]]) {
+  const o = (await (await post('/api/auth/register-options', { name: '옵션확인', kind })).json()).options;
+  const ok = o.authenticatorSelection.authenticatorAttachment === attach && (hint ? o.hints.includes(hint) : o.hints.length === 0);
+  check('extra-kind', `저장 위치 '${kind}' 선택이 등록 옵션에 반영됨`, ok, `attachment=${o.authenticatorSelection.authenticatorAttachment ?? '없음'} hints=${o.hints.join(',') || '없음'}`);
+}
 const asset = await (await get('/passkey.js')).text();
 check('extra-js', '화면 코드(passkey.js)에도 비공개 내용 없음', !asset.includes(SEED_TEXT));
 
