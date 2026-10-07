@@ -1,6 +1,6 @@
 {
   "base": "https://kimjaehyun-passkey-t08.vercel.app",
-  "at": "2026-10-07T01:36:44.355Z",
+  "at": "2026-10-07T01:38:39.722Z",
   "results": [
     {
       "id": "T08-C18",
@@ -36,7 +36,7 @@
       "id": "extra-kind",
       "desc": "저장 위치 'phone' 선택이 등록 옵션에 반영됨",
       "pass": true,
-      "detail": "attachment=cross-platform hints=hybrid"
+      "detail": "attachment=없음 hints=hybrid"
     },
     {
       "id": "extra-kind",
