@@ -139,9 +139,9 @@ check('T08-C29', '그 거절 응답에 세션 쿠키가 없음', !forged.headers
 
 // ---------- 5. 다른 기기 연결 링크로 두 번째 패스키 (기기 D = 휴대폰 역할) ----------
 await A.page.click('#vaultInviteMake');
-await A.page.waitForFunction(() => document.getElementById('vaultInviteUrl').value.includes('#link='));
+await A.page.waitForFunction(() => document.getElementById('vaultInviteUrl').value.includes('?link='));
 const inviteUrl = await A.page.inputValue('#vaultInviteUrl');
-const inviteToken = inviteUrl.split('#link=')[1];
+const inviteToken = new URL(inviteUrl).searchParams.get('link');
 check('ux-invite', '로그인한 기기에서 연결 링크를 만들 수 있음', inviteUrl.startsWith(ORIGIN) && inviteToken.length >= 40);
 const D = await newDevice('D-휴대폰');
 await D.page.goto(inviteUrl);

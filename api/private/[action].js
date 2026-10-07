@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         expiresAt: new Date(Date.now() + INVITE_MS).toISOString(),
       });
       log('invite_created');
-      return send(res, 201, { url: `${rp(req).origin}/#link=${token}`, expiresInSeconds: INVITE_MS / 1000 });
+      return send(res, 201, { url: `${rp(req).origin}/?link=${token}#vault`, expiresInSeconds: INVITE_MS / 1000 });
     }
 
     if (action === 'passkeys') {

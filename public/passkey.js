@@ -280,9 +280,12 @@
     set(v) { try { sessionStorage.setItem('t08-invite', v); } catch { /* 저장 못 해도 이번 화면은 동작 */ } },
     clear() { try { sessionStorage.removeItem('t08-invite'); } catch { /* 무시 */ } },
   };
-  const linkMatch = location.hash.match(/^#link=([\w-]+)$/);
-  if (linkMatch) store.set(linkMatch[1]);
-  const invite = linkMatch ? linkMatch[1] : store.get();
+  // 새 형식은 ?link=토큰 (카카오톡 등이 # 뒤를 잘라내는 일이 있어서). 예전 #link=토큰도 받는다.
+  const fromUrl = new URLSearchParams(location.search).get('link')
+    || (location.hash.match(/^#link=([\w-]+)$/) || [])[1];
+  const validLink = fromUrl && /^[\w-]+$/.test(fromUrl) ? fromUrl : null;
+  if (validLink) store.set(validLink);
+  const invite = validLink || store.get();
   if (invite) {
     history.replaceState(null, '', location.pathname + '#vault');
     panel('invite');
