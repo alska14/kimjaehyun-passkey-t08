@@ -237,14 +237,6 @@
     });
   });
 
-  $('vaultAddKeyForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    run(async () => {
-      say('기기의 패스키 만들기 창을 기다리는 중…');
-      if (await register({ kind: $('vaultAddKind').value })) { say('패스키를 추가했습니다.', 'ok'); await loadOpen(); }
-    });
-  });
-
   $('vaultInviteMake').addEventListener('click', () => run(async () => {
     const r = await api('/api/private/invite', { method: 'POST', data: {} });
     if (!r.ok) return say(errText(r), 'error');
