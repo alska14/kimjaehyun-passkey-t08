@@ -1,6 +1,6 @@
 {
-  "base": "http://localhost:3116",
-  "at": "2026-10-07T02:19:08.025Z",
+  "base": "https://kimjaehyun-passkey-t08.vercel.app",
+  "at": "2026-10-07T02:21:11.589Z",
   "results": [
     {
       "id": "T08-C18",
@@ -149,6 +149,12 @@
     {
       "id": "ux-invite",
       "desc": "링크 토큰이 주소창에서 지워짐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "ux-invite",
+      "desc": "연결 화면에서 새로고침해도 연결 안내가 유지됨",
       "pass": true,
       "detail": ""
     },
