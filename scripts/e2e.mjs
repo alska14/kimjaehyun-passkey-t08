@@ -142,7 +142,7 @@ await A.page.click('#vaultInviteMake');
 await A.page.waitForFunction(() => document.getElementById('vaultInviteUrl').value.includes('?link='));
 const inviteUrl = await A.page.inputValue('#vaultInviteUrl');
 const inviteToken = new URL(inviteUrl).searchParams.get('link');
-check('ux-invite', '로그인한 기기에서 연결 링크를 만들 수 있음', inviteUrl.startsWith(ORIGIN) && inviteToken.length >= 40);
+check('ux-invite', '로그인한 기기에서 연결 링크를 만들 수 있음', inviteUrl.startsWith(ORIGIN) && inviteToken.length >= 12);
 const D = await newDevice('D-휴대폰');
 await D.page.goto(inviteUrl);
 await D.page.waitForSelector('#vaultInvite:not([hidden])');
@@ -231,6 +231,22 @@ const aItems = await (await get('/api/private/items', await cookieOf(D))).json()
 check('T08-C39', 'A 자료에 B가 쓴 메모가 섞이지 않음', !aItems.items.some((i) => i.title === 'B가 쓴 메모'), `A ${aItems.items.length}건`);
 await B.page.locator('#vaultBox').scrollIntoViewIfNeeded();
 await B.page.screenshot({ path: 'evidence/05-account-B.png' });
+
+// ---------- 7b. 연결 코드를 직접 입력 (링크가 잘리는 경우 대비) ----------
+await D.page.click('#vaultInviteMake');
+await D.page.waitForFunction(() => document.getElementById('vaultInviteCode').textContent.length > 0);
+const code = await D.page.locator('#vaultInviteCode').innerText();
+check('ux-code', '연결 코드가 XXXX-XXXX-XXXX 형식(헷갈리는 글자 제외)', /^[A-HJKMNP-Z2-9]{4}(-[A-HJKMNP-Z2-9]{4}){2}$/.test(code));
+const E = await newDevice('E-코드');
+await E.page.goto(BASE);
+await E.page.click('#vaultCode summary');
+await E.page.fill('#vaultCodeInput', code.toLowerCase().replace(/-/g, ' '));
+await E.page.click('#vaultCodeForm button[type=submit]');
+await waitOpen(E);
+await E.page.waitForFunction(() => document.querySelectorAll('#vaultKeys li').length === 2, null, { timeout: 15000 });
+check('ux-code', '연결 코드를 소문자·공백 섞어 입력해도 같은 계정에 연결됨(패스키 2개)', true);
+const codeAgain = await post('/api/auth/register-options', { invite: code });
+check('ux-code', '이미 쓴 연결 코드는 거절', codeAgain.status === 400, `HTTP ${codeAgain.status}`);
 
 // ---------- 8. 다른 오리진 거절 ----------
 const evil = await fetch(`${BASE}/api/auth/login-options`, {

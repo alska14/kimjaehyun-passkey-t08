@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { db } from '../../lib/db.mjs';
 import {
   send, log, rp, sameOriginJson, body, currentUser, startSession, clearCookie,
-  readCookie, sha256, clientChallenge, CHALLENGE_MS,
+  readCookie, sha256, clientChallenge, normalizeInvite, CHALLENGE_MS,
 } from '../../lib/http.mjs';
 
 const RP_NAME = '김재현 포트폴리오';
@@ -32,7 +32,7 @@ async function registerOptions(req, res) {
   // 링크는 여기서 소모하지 않고, 등록 검증이 끝날 때 한 번만 소모한다(중간에 취소해도 다시 시도 가능).
   let inviteKey = null;
   if (b.invite) {
-    inviteKey = 'invite:' + sha256(String(b.invite));
+    inviteKey = 'invite:' + sha256(normalizeInvite(b.invite));
     const inv = await db().peekChallenge(inviteKey, 'register');
     user = inv ? await db().getUser(inv.userId) : null;
     if (!user) return send(res, 400, { error: 'INVITE_INVALID' });

@@ -212,6 +212,7 @@
     $('vaultKeys').replaceChildren();
     $('vaultInviteResult').hidden = true;
     $('vaultInviteUrl').value = '';
+    $('vaultInviteCode').textContent = '';
   }
 
   async function showOpen() {
@@ -240,10 +241,20 @@
     });
   });
 
+  $('vaultCodeForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = $('vaultCodeInput').value.trim();
+    run(async () => {
+      say('기기의 패스키 만들기 창을 기다리는 중…');
+      if (await register({ invite: code })) { say('이 기기를 내 계정에 연결했습니다.', 'ok'); await showOpen(); }
+    });
+  });
+
   $('vaultInviteMake').addEventListener('click', () => run(async () => {
     const r = await api('/api/private/invite', { method: 'POST', data: {} });
     if (!r.ok) return say(errText(r), 'error');
     $('vaultInviteUrl').value = r.json.url;
+    $('vaultInviteCode').textContent = r.json.code;
     $('vaultInviteResult').hidden = false;
     say('연결 링크를 만들었습니다. 연결할 기기에서 열어 주세요.', 'ok');
   }));

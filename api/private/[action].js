@@ -1,5 +1,5 @@
 import { db } from '../../lib/db.mjs';
-import { send, log, sameOriginJson, body, currentUser, rp, sha256, newToken } from '../../lib/http.mjs';
+import { send, log, sameOriginJson, body, currentUser, rp, sha256, newInviteCode, formatInviteCode } from '../../lib/http.mjs';
 
 const INVITE_MS = 10 * 60 * 1000;
 
@@ -37,13 +37,13 @@ export default async function handler(req, res) {
     if (action === 'invite') {
       if (req.method !== 'POST') return send(res, 405, { error: 'METHOD_NOT_ALLOWED' });
       if (!sameOriginJson(req)) return send(res, 403, { error: 'BAD_ORIGIN' });
-      const token = newToken();
+      const code = newInviteCode();
       await db().saveChallenge({
-        challenge: 'invite:' + sha256(token), kind: 'register', userId: user.id,
+        challenge: 'invite:' + sha256(code), kind: 'register', userId: user.id,
         expiresAt: new Date(Date.now() + INVITE_MS).toISOString(),
       });
       log('invite_created');
-      return send(res, 201, { url: `${rp(req).origin}/?link=${token}#vault`, expiresInSeconds: INVITE_MS / 1000 });
+      return send(res, 201, { code: formatInviteCode(code), url: `${rp(req).origin}/?link=${formatInviteCode(code)}#vault`, expiresInSeconds: INVITE_MS / 1000 });
     }
 
     if (action === 'passkeys') {
