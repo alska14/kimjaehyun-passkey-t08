@@ -85,7 +85,7 @@
       cred = await navigator.credentials.create({ publicKey: creationOptions(start.json.options) });
     } catch (e) {
       if (cancelled(e)) {
-        return say('등록이 취소되었거나, 이 기기에서 고른 저장 위치를 쓸 수 없습니다. 서버에는 계정도 패스키도 저장되지 않았습니다. 창이 안 뜨거나 "기기를 사용할 수 없음"이 나오면 "패스키를 저장할 곳"을 "내 휴대폰"이나 "브라우저가 고르게 하기"로 바꿔 다시 눌러 보세요.', 'info');
+        return say('등록이 취소되었거나, 이 기기에서 고른 저장 위치를 쓸 수 없습니다. 서버에는 계정도 패스키도 저장되지 않았습니다. 창이 안 뜨거나 "기기를 사용할 수 없음"이 나오면 "패스키를 저장할 곳"을 "브라우저가 고르게 하기"나 "다른 기기의 휴대폰 쓰기(QR)"로 바꿔 다시 눌러 보세요.', 'info');
       }
       if (e && e.name === 'InvalidStateError') return say('이 기기의 패스키가 이미 이 계정에 등록되어 있습니다.', 'error');
       return say('이 기기나 브라우저에서 패스키를 만들 수 없습니다.', 'error');
