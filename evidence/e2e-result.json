@@ -1,0 +1,204 @@
+{
+  "base": "http://localhost:3112",
+  "at": "2026-10-07T01:10:48.165Z",
+  "results": [
+    {
+      "id": "T08-C18",
+      "desc": "로그인 안 한 상태로 받은 페이지 소스에 비공개 내용이 없음",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C11",
+      "desc": "1번 소개 페이지의 공개 내용이 그대로 남아 있음",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C16",
+      "desc": "로그인 없이 /api/private/items 요청 거절",
+      "pass": true,
+      "detail": "HTTP 401"
+    },
+    {
+      "id": "T08-C16",
+      "desc": "로그인 없이 /api/private/passkeys 요청 거절",
+      "pass": true,
+      "detail": "HTTP 401"
+    },
+    {
+      "id": "extra-js",
+      "desc": "화면 코드(passkey.js)에도 비공개 내용 없음",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C14",
+      "desc": "등록 직후 비공개 항목이 3개 이상 보임",
+      "pass": true,
+      "detail": "3개"
+    },
+    {
+      "id": "T08-C21/C24",
+      "desc": "등록한 패스키에 이름이 붙고 목록에 보임",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C26",
+      "desc": "패스키 저장 위치 표시가 목록에 있음",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C34",
+      "desc": "세션 쿠키는 HttpOnly(스크립트로 못 읽음)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "extra-api",
+      "desc": "쿠키로 비공개 API 요청이 성공(200)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C33",
+      "desc": "로그아웃 뒤 같은 세션 값으로 다시 요청하면 거절",
+      "pass": true,
+      "detail": "HTTP 401"
+    },
+    {
+      "id": "T08-C15",
+      "desc": "로그아웃하면 화면에서 비공개 내용이 사라짐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C27/C28",
+      "desc": "로그인 요청마다 질문이 다름",
+      "pass": true,
+      "detail": "2회, 모두 다름"
+    },
+    {
+      "id": "T08-C20",
+      "desc": "등록 요청 질문 값 기록 (이후 두 번째 등록과 비교)",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C31",
+      "desc": "이미 쓴 질문으로 다시 로그인 시도하면 거절",
+      "pass": true,
+      "detail": "HTTP 400 CHALLENGE_INVALID"
+    },
+    {
+      "id": "T08-C30",
+      "desc": "서명이 틀린 로그인 요청은 거절",
+      "pass": true,
+      "detail": "HTTP 401"
+    },
+    {
+      "id": "T08-C29",
+      "desc": "그 거절 응답에 세션 쿠키가 없음",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C42",
+      "desc": "한 계정에 패스키가 두 개 등록됨",
+      "pass": true,
+      "detail": "목록 2개"
+    },
+    {
+      "id": "T08-C43",
+      "desc": "목록에 이름과 등록 날짜 표시",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C44",
+      "desc": "패스키 하나를 지운 뒤 목록에서 사라짐",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C46",
+      "desc": "마지막 패스키는 못 지움(409). 하나도 안 남는 상태를 막음",
+      "pass": true,
+      "detail": "HTTP 409"
+    },
+    {
+      "id": "T08-C44",
+      "desc": "남은 두 번째 패스키로 로그인됨",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C45",
+      "desc": "지운 패스키로는 더 이상 로그인할 수 없음",
+      "pass": true,
+      "detail": "로그인에 실패했습니다. 이 사이트에 등록한 패스키인지 확인해 주세요."
+    },
+    {
+      "id": "T08-C25",
+      "desc": "등록 중 취소하면 안내가 나오고 로그인 상태가 되지 않음",
+      "pass": true,
+      "detail": "등록을 취소했습니다. 서버에는 계정도 패스키도 저장되지 않았습니다."
+    },
+    {
+      "id": "T08-C25",
+      "desc": "취소한 뒤 세션 쿠키 없음",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C36",
+      "desc": "두 번째 계정도 등록됨",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C20",
+      "desc": "등록 요청마다 질문 값이 서로 다름",
+      "pass": true,
+      "detail": "계정 A 등록 질문 ≠ 계정 B 등록 질문"
+    },
+    {
+      "id": "T08-C37",
+      "desc": "B가 A의 패스키 삭제를 요청하면 거절(404)",
+      "pass": true,
+      "detail": "HTTP 404"
+    },
+    {
+      "id": "T08-C38",
+      "desc": "주소에 다른 계정을 적어도 B 자료만 옴",
+      "pass": true,
+      "detail": "B 3건, 위조 요청 3건"
+    },
+    {
+      "id": "T08-C40",
+      "desc": "본문에 다른 계정 ID를 적어 보내도 B 자료로만 저장",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "T08-C39",
+      "desc": "A 자료에 B가 쓴 메모가 섞이지 않음",
+      "pass": true,
+      "detail": "A 3건"
+    },
+    {
+      "id": "extra-origin",
+      "desc": "다른 사이트에서 온 POST 요청 거절(403)",
+      "pass": true,
+      "detail": "HTTP 403"
+    },
+    {
+      "id": "모바일",
+      "desc": "390px 폭에서 가로 넘침 없음",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}
