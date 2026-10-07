@@ -1,6 +1,6 @@
 {
   "base": "https://kimjaehyun-passkey-t08.vercel.app",
-  "at": "2026-10-07T01:18:47.799Z",
+  "at": "2026-10-07T01:23:27.411Z",
   "results": [
     {
       "id": "T08-C18",
@@ -25,6 +25,30 @@
       "desc": "로그인 없이 /api/private/passkeys 요청 거절",
       "pass": true,
       "detail": "HTTP 401"
+    },
+    {
+      "id": "extra-kind",
+      "desc": "저장 위치 'local' 선택이 등록 옵션에 반영됨",
+      "pass": true,
+      "detail": "attachment=platform hints=client-device"
+    },
+    {
+      "id": "extra-kind",
+      "desc": "저장 위치 'phone' 선택이 등록 옵션에 반영됨",
+      "pass": true,
+      "detail": "attachment=cross-platform hints=hybrid"
+    },
+    {
+      "id": "extra-kind",
+      "desc": "저장 위치 'key' 선택이 등록 옵션에 반영됨",
+      "pass": true,
+      "detail": "attachment=cross-platform hints=security-key"
+    },
+    {
+      "id": "extra-kind",
+      "desc": "저장 위치 'auto' 선택이 등록 옵션에 반영됨",
+      "pass": true,
+      "detail": "attachment=없음 hints=없음"
     },
     {
       "id": "extra-js",
